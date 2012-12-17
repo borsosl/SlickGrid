@@ -11,11 +11,33 @@ classes should alter those!
   border-left: 0px;
 }
 
+.slick-header-span-text {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 16px;
+  line-height: 16px;
+  margin: 0;
+  padding: 4px;
+  border-right: 1px solid silver;
+  border-left: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+  float: left;
+  left: 1000px;
+  text-align: center;
+}
+
 .slick-header-columns, .slick-headerrow-columns {
   position: relative;
   white-space: nowrap;
   cursor: default;
   overflow: hidden;
+}
+
+.slick-header-columns {
+  left: -1000px;
 }
 
 .slick-header-column.ui-state-default {
@@ -32,6 +54,16 @@ classes should alter those!
   border-top: 0px;
   border-bottom: 0px;
   float: left;
+}
+
+.slick-header-spanned-columns.ui-state-default {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  margin: 0;
+  border-right: 1px solid silver;
+  float: left;
+  left: 1000px;
 }
 
 .slick-headerrow-column.ui-state-default {

@@ -128,6 +128,8 @@ if (typeof Slick === "undefined") {
     var viewportH, viewportW;
     var canvasWidth;
     var viewportHasHScroll, viewportHasVScroll;
+    var headerHeight;
+    var headerColumnElements;
     var headerColumnWidthDiff = 0, headerColumnHeightDiff = 0, // border+padding
         cellWidthDiff = 0, cellHeightDiff = 0;
     var absoluteColumnMinWidth;
@@ -161,7 +163,7 @@ if (typeof Slick === "undefined") {
     var sortColumns = [];
     var columnPosLeft = [];
     var columnPosRight = [];
-
+    var headerSpans = [];
 
     // async call handles
     var h_editorLoader = null;
@@ -230,7 +232,7 @@ if (typeof Slick === "undefined") {
       $focusSink = $("<div tabIndex='0' hideFocus style='position:fixed;width:0;height:0;top:0;left:0;outline:0;'></div>").appendTo($container);
 
       $headerScroller = $("<div class='slick-header ui-state-default' style='overflow:hidden;position:relative;' />").appendTo($container);
-      $headers = $("<div class='slick-header-columns' style='left:-1000px' />").appendTo($headerScroller);
+      $headers = $("<div class='slick-header-columns' />").appendTo($headerScroller);
       $headers.width(getHeadersWidth());
 
       $headerRowScroller = $("<div class='slick-headerrow ui-state-default' style='overflow:hidden;position:relative;' />").appendTo($container);
@@ -473,7 +475,7 @@ if (typeof Slick === "undefined") {
       }
 
       var columnDef = columns[idx];
-      var $header = $headers.children().eq(idx);
+      var $header = headerColumnElements.eq(idx);
       if ($header) {
         if (title !== undefined) {
           columns[idx].name = title;
@@ -542,16 +544,45 @@ if (typeof Slick === "undefined") {
         });
       $headerRow.empty();
 
+      var headerSpanEnd = -1;
+      var $spannedColumnsParent;
+      headerHeight = 24;
       for (var i = 0; i < columns.length; i++) {
         var m = columns[i];
+        
+        // example: columns = [{..., headerSpan: {title: 'spanned title', span: 3}},...]
+        if (m.headerSpan) {
+        	headerSpanEnd = i + m.headerSpan.span - 1;
+        	var $verticalWrapper = $("<div class='ui-state-default slick-header-spanned-columns' />")
+        		.appendTo($headers);
+        	var $spannedTop = $("<div class='slick-header-columns' />")
+        		.appendTo($verticalWrapper);
+        	$("<div class='ui-state-default slick-header-span-text' />")
+        		.html("<span class='slick-column-name'>" + m.headerSpan.title + "</span>")
+        		.appendTo($spannedTop);
+        	$spannedColumnsParent = $("<div class='slick-header-columns' />")
+        		.appendTo($verticalWrapper);
+        	m.headerSpan.$wrapper = $verticalWrapper;
+        	headerHeight = 48;
+        }
+        else if(i > headerSpanEnd) {
+        	headerSpanEnd = -1;
+        }
 
         var header = $("<div class='ui-state-default slick-header-column' id='" + uid + m.id + "' />")
             .html("<span class='slick-column-name'>" + m.name + "</span>")
             .width(m.width - headerColumnWidthDiff)
             .attr("title", m.toolTip || "")
             .data("column", m)
-            .addClass(m.headerCssClass || "")
-            .appendTo($headers);
+            .addClass(m.headerCssClass || "");
+        m.$headerCell = header;
+        
+        if (headerSpanEnd > -1)
+        	header.appendTo($spannedColumnsParent);
+        else
+            header.appendTo($headers);
+
+        $headers.height(headerHeight+'px');
 
         if (options.enableColumnReorder || m.sortable) {
           header.hover(hoverBegin, hoverEnd);
@@ -577,6 +608,8 @@ if (typeof Slick === "undefined") {
           });
         }
       }
+      
+      headerColumnElements = $headers.find(".slick-header-column");
 
       setSortColumns(sortColumns);
       setupColumnResize();
@@ -689,7 +722,7 @@ if (typeof Slick === "undefined") {
 
     function setupColumnResize() {
       var $col, j, c, pageX, columnElements, minPageX, maxPageX, firstResizable, lastResizable;
-      columnElements = $headers.children();
+      columnElements = headerColumnElements;
       columnElements.find(".slick-resizable-handle").remove();
       columnElements.each(function (i, e) {
         if (columns[i].resizable) {
@@ -1082,7 +1115,7 @@ if (typeof Slick === "undefined") {
     function applyColumnHeaderWidths() {
       if (!initialized) { return; }
       var h;
-      for (var i = 0, headers = $headers.children(), ii = headers.length; i < ii; i++) {
+      for (var i = 0, headers = headerColumnElements, ii = headers.length; i < ii; i++) {
         h = $(headers[i]);
         if (h.width() !== columns[i].width - headerColumnWidthDiff) {
           h.width(columns[i].width - headerColumnWidthDiff);
@@ -1102,6 +1135,23 @@ if (typeof Slick === "undefined") {
         rule.right.style.right = (canvasWidth - x - w) + "px";
 
         x += columns[i].width;
+        
+        var m = columns[i];
+        if(m.headerSpan) {
+            var headerSpanEnd = i + m.headerSpan.span - 1;
+            var spanWidth = w;
+            for (var j = i+1; j <= headerSpanEnd; j++)
+                spanWidth += columns[j].width;
+            var $wrapper = m.headerSpan.$wrapper;
+            $wrapper.width((spanWidth-1)+'px');
+            $wrapper.children().width((spanWidth+1000)+'px').height('24px');
+            $(".slick-header-span-text", $wrapper).width((spanWidth-1)+'px');
+        }
+        else if(!headerSpanEnd || i>headerSpanEnd) {
+            m.$headerCell
+                .height((headerHeight-8)+'px')
+                .css('padding-top', (4+((headerHeight-24)/2))+'px');
+        }
       }
     }
 
@@ -1112,7 +1162,7 @@ if (typeof Slick === "undefined") {
     function setSortColumns(cols) {
       sortColumns = cols;
 
-      var headerColumnEls = $headers.children();
+      var headerColumnEls = headerColumnElements;
       headerColumnEls
           .removeClass("slick-header-column-sorted")
           .find(".slick-sort-indicator")
@@ -2601,7 +2651,7 @@ if (typeof Slick === "undefined") {
     }
 
     function getGridPosition() {
-      return absBox($container[0])
+      return absBox($container[0]);
     }
 
     function handleActiveCellPositionChange() {
