@@ -69,6 +69,7 @@ if (typeof Slick === "undefined") {
       forceFitColumns: false,
       enableAsyncPostRender: false,
       asyncPostRenderDelay: 50,
+      syncPostRender: null,
       autoHeight: false,
       editorLock: Slick.GlobalEditorLock,
       showHeaderRow: false,
@@ -1950,6 +1951,8 @@ if (typeof Slick === "undefined") {
 
       // render missing rows
       renderRows(rendered);
+      if(options.syncPostRender)
+          options.syncPostRender();
 
       postProcessFromRow = visible.top;
       postProcessToRow = Math.min(options.enableAddRow ? getDataLength() : getDataLength() - 1, visible.bottom);
